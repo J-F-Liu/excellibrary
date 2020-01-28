@@ -81,21 +81,7 @@ namespace ExcelLibrary
             if (dataset.Tables.Count == 0)
                 throw new ArgumentException("DataSet needs to have at least one DataTable", "dataset");
 
-            Workbook workbook = new Workbook();
-            foreach (DataTable dt in dataset.Tables)
-            {
-                Worksheet worksheet = new Worksheet(dt.TableName);
-                for (int i = 0; i < dt.Columns.Count; i++)
-                {
-                    // Add column header
-                    worksheet.Cells[0, i] = new Cell(dt.Columns[i].ColumnName);
-
-                    // Populate row data
-                    for (int j = 0; j < dt.Rows.Count; j++)
-                        worksheet.Cells[j + 1, i] = new Cell(dt.Rows[j][i]);
-                }
-                workbook.Worksheets.Add(worksheet);
-            }
+            Workbook workbook = PopulateWorkbook(dataset);
             workbook.Save(filePath);
         }
 
@@ -104,6 +90,12 @@ namespace ExcelLibrary
             if (dataset.Tables.Count == 0)
                 throw new ArgumentException("DataSet needs to have at least one DataTable", "dataset");
 
+            Workbook workbook = PopulateWorkbook(dataset);
+            workbook.SaveToStream(stream);
+        }
+
+        private static Workbook PopulateWorkbook(DataSet dataset)
+        {
             Workbook workbook = new Workbook();
             foreach (DataTable dt in dataset.Tables)
             {
@@ -115,11 +107,15 @@ namespace ExcelLibrary
 
                     // Populate row data
                     for (int j = 0; j < dt.Rows.Count; j++)
-                        worksheet.Cells[j + 1, i] = new Cell(dt.Rows[j][i]);
+                    {
+                        String rowData = DBNull.Value.Equals(dt.Rows[j][i]) ?
+                        String.Empty : Convert.ToString(dt.Rows[j][i]);
+                        worksheet.Cells[j + 1, i] = new Cell(rowData);
+                    }
                 }
                 workbook.Worksheets.Add(worksheet);
             }
-            workbook.SaveToStream(stream);
+            return workbook;
         }
     }
 }
